@@ -1,0 +1,31 @@
+#MD simulation and MM/PB(GB)SA binding free energy calculation
+1. #Assuming AMBER ((https://ambermd.org/Installation.php)) has been properly installed.
+2. cd your/work/directory
+
+#Assign atomic charges to the ligand
+3. antechamber -i ligand.mol2 -fi mol2 -o gaussian.mol2 -fo mol2 -nc 0 -c bcc -rn MOL
+4. parmchk2 -i gaussian.mol2 -f mol2 -o frcmod 
+
+#Build the initial system 
+5. tleap -f tleap.in
+
+#Run MD simulation
+6. #The following calculations can be submitted through qsub, ¡®source run.qsub¡¯
+pmemd.cuda -O -i min1.in -p water.top -c water.crd -r min1.rst -o min1.out -ref water.crd 
+pmemd.cuda -O -i min2.in -p water.top -c min1.rst -r min2.rst -o min2.out -ref min1.rst 
+pmemd.cuda -O -i min3.in -p water.top -c min2.rst -r min3.rst -o min3.out -ref min2.rst
+pmemd.cuda -O -i min4.in -p water.top -c min3.rst -r min4.rst -o min4.out
+pmemd.cuda -O -i md1.in -p water.top -c min4.rst -o md1.out -x md1.trj -r md1.rst -ref min4.rst
+pmemd.cuda -O -i md2.in -p water.top -c md1.rst -o md2.out -x md2.trj -r md2.rst -ref md1.rst
+mpirun -np 14 pmemd.MPI -O -i md3.in -p water.top -c md2.rst -o md3.out -x md3.trj -r md3.rst
+pmemd.cuda -O -i md4.in -p water.top -c md3.rst -o md4.out -x md4.trj -r md4.rst
+(#md4.trj is the production MD trajectory for the further MM/PB(GB)SA binding free energy analysis)
+
+7. MM/PB(GB)SA calculation
+mpirun -np 10 MMPBSA.py.MPI -O -i gbsa.in -o gbsa.txt -sp water.top -cp complex.top -rp receptor.top -lp ligand.top -y md4.trj
+mpirun -np 10 MMPBSA.py.MPI -O -i pbsa.in -o pbsa.txt -sp water.top -cp complex.top -rp receptor.top -lp ligand.top -y md4.trj
+(#results of MM/GBSA and MM/PBSA (¦Å=1) can be found in gbsa.txt and pbsa.txt, respectively.)
+
+8. entropy calculation
+mpirun -np 10 MMPBSA.py.MPI -O -i nmode.in -o entropy.txt -sp water.top -cp complex.top -rp receptor.top -lp ligand.top -y md4.trj
+

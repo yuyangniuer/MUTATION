@@ -1,0 +1,22 @@
+source leaprc.protein.ff14SB
+source leaprc.gaff
+source leaprc.water.tip3p
+loadamberparams frcmod.ionsff99_tip3p
+
+mods = loadamberparams ./frcmod
+MOL = loadmol2 ./gaussian.mol2
+
+receptor=loadpdb receptor.pdb
+ligand=loadpdb ligand.pdb
+complex=combine{receptor ligand}
+water=combine{receptor ligand}
+
+addions water Na+ 0
+addions water Cl- 0
+solvatebox water TIP3PBOX 10
+saveamberparm water water.top water.crd
+saveamberparm complex complex.top complex.crd
+saveamberparm receptor receptor.top receptor.crd
+saveamberparm ligand ligand.top ligand.crd
+
+quit

@@ -1,0 +1,25 @@
+#!/bin/sh
+#PBS -N Name
+#PBS -l nodes=cu03:ppn=14
+#PBS -l walltime=9999:00:00
+#PBS -q batch
+#PBS -V
+#PBS -S /bin/bash
+
+module load amber
+module load openmpi
+
+# PBS_O_WORKDIR refers to the directory from which the job was submitted.
+cd $PBS_O_WORKDIR
+
+export CUDA_VISIBLE_DEVICES=0
+
+pmemd.cuda -O -i min1.in -p water.top -c water.crd -r min1.rst -o min1.out -ref water.crd
+pmemd.cuda -O -i min2.in -p water.top -c min1.rst  -r min2.rst -o min2.out -ref min1.rst
+pmemd.cuda -O -i min3.in -p water.top -c min2.rst  -r min3.rst -o min3.out -ref min2.rst
+pmemd.cuda -O -i min4.in -p water.top -c min3.rst  -r min4.rst -o min4.out
+pmemd.cuda -O -i md1.in  -p water.top -c min4.rst  -o md1.out -x md1.trj -r md1.rst -ref min4.rst
+pmemd.cuda -O -i md2.in  -p water.top -c md1.rst   -o md2.out -x md2.trj -r md2.rst -ref md1.rst
+mpirun -np 14 pmemd.MPI -O -i md3.in  -p water.top -c md2.rst   -o md3.out -x md3.trj -r md3.rst
+pmemd.cuda -O -i md4.in  -p water.top -c md3.rst   -o md4.out -x md4.trj -r md4.rst
+

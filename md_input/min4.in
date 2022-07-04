@@ -1,0 +1,9 @@
+# minimization stage-4
+&cntrl
+ iwrap=1,
+ imin=1,
+ maxcyc=5000, 
+ ncyc=1000,
+ cut=10,
+ ntb=1,
+/

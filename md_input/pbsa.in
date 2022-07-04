@@ -1,0 +1,7 @@
+&general
+startframe=1, endframe=2000, interval=1,
+verbose=0, keep_files=1, use_sander=1,
+/
+&pb
+indi=1, istrng=0, scale=2, fillratio=4.0, inp=1,
+/
